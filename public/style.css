@@ -119,11 +119,27 @@ h2 {
   min-width: 0;
 }
 
-.fav-chip span:first-child {
+.fav-chip-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.fav-chip-station {
+  font-size: 14px;
+  font-weight: 700;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  min-width: 0;
+}
+
+.fav-chip-direction {
+  font-size: 12px;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .fav-chip .fav-remove {
@@ -155,13 +171,18 @@ h2 {
 
 .direction-card .line-name {
   font-size: 15px;
-  font-weight: 600;
+  font-weight: 700;
 }
 
-.direction-card .updn {
+.line-badge {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(77, 163, 255, 0.15);
+  color: var(--accent);
   font-size: 12px;
-  color: var(--muted);
-  margin-top: 2px;
+  font-weight: 600;
 }
 
 .direction-card .eta {
@@ -172,21 +193,23 @@ h2 {
 }
 
 #countdown-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
   margin-bottom: 10px;
 }
 
+#countdown-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
 #countdown-station {
-  font-size: 20px;
-  font-weight: 700;
+  font-size: 24px;
+  font-weight: 800;
 }
 
 #countdown-direction {
-  flex: 1;
-  font-size: 13px;
-  color: var(--muted);
+  margin-top: 8px;
 }
 
 #fav-toggle {

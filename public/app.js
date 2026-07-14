@@ -66,8 +66,14 @@ function renderFavorites() {
   favs.forEach((f) => {
     const chip = document.createElement('div');
     chip.className = 'fav-chip';
-    chip.innerHTML = `<span>${f.station} · ${f.label || f.updnLine}</span><span class="fav-remove">✕</span>`;
-    chip.querySelector('span:first-child').addEventListener('click', () => {
+    chip.innerHTML = `
+      <div class="fav-chip-info">
+        <div class="fav-chip-station">${f.station}역</div>
+        <div class="fav-chip-direction">${f.label || f.updnLine}</div>
+      </div>
+      <span class="fav-remove">✕</span>
+    `;
+    chip.querySelector('.fav-chip-info').addEventListener('click', () => {
       enterCountdown(f.station, f.subwayId, f.updnLine);
     });
     chip.querySelector('.fav-remove').addEventListener('click', (e) => {
@@ -220,7 +226,7 @@ function renderDirections(station, list, backTarget) {
     card.innerHTML = `
       <div>
         <div class="line-name">${soonest.trainLineNm}</div>
-        <div class="updn">${soonest.updnLine || ''} · ${soonest.lineName || ''}</div>
+        <div class="line-badge">${soonest.updnLine || ''} · ${soonest.lineName || ''}</div>
       </div>
       <div class="eta">${formatEta(soonest)}</div>
     `;
