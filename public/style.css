@@ -232,10 +232,10 @@ h2 {
 }
 
 #countdown-seconds {
-  font-size: 84px;
+  font-size: 52px;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
-  letter-spacing: -2px;
+  white-space: nowrap;
   color: var(--green);
   transition: color 0.3s;
 }

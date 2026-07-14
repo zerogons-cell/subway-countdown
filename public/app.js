@@ -315,6 +315,12 @@ async function refreshCountdown() {
   }
 }
 
+function formatMmSs(totalSeconds) {
+  const m = Math.floor(totalSeconds / 60);
+  const s = totalSeconds % 60;
+  return `${String(m).padStart(2, '0')}분 ${String(s).padStart(2, '0')}초`;
+}
+
 function tickCountdown() {
   if (!countdownState || countdownState.remaining == null) return;
   const secondsEl = document.getElementById('countdown-seconds');
@@ -330,7 +336,7 @@ function tickCountdown() {
   const elapsed = Math.floor((Date.now() - countdownState.fetchedAt) / 1000);
   const remaining = Math.max(countdownState.remaining - elapsed, 0);
 
-  secondsEl.textContent = remaining;
+  secondsEl.textContent = formatMmSs(remaining);
   secondsEl.classList.remove('warn', 'danger');
   if (remaining <= 10) {
     secondsEl.classList.add('danger');
