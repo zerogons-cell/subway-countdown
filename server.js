@@ -10,6 +10,36 @@ const API_KEY = process.env.SEOUL_API_KEY;
 
 app.use(express.static(path.join(__dirname, 'public')));
 
+// subwayNm이 API에서 null로 오는 경우가 많아 subwayId로 직접 매핑한다.
+const LINE_NAMES = {
+  1001: '1호선',
+  1002: '2호선',
+  1003: '3호선',
+  1004: '4호선',
+  1005: '5호선',
+  1006: '6호선',
+  1007: '7호선',
+  1008: '8호선',
+  1009: '9호선',
+  1063: '경의중앙선',
+  1065: '공항철도',
+  1067: '경춘선',
+  1075: '수인분당선',
+  1077: '신분당선',
+  1081: '경강선',
+  1092: '우이신설선',
+  1093: '서해선',
+  1094: '김포골드라인',
+  1095: '동해선',
+  1096: '신림선'
+};
+
+function getLineName(subwayId, subwayNm) {
+  if (subwayNm) return subwayNm;
+  if (LINE_NAMES[subwayId]) return LINE_NAMES[subwayId];
+  return subwayId ? `노선(${subwayId})` : '노선 미상';
+}
+
 // 서울 열린데이터광장 실시간 지하철 도착정보 프록시
 // 브라우저에서 직접 호출 시 CORS가 막혀 있어 서버를 거쳐 전달한다.
 app.get('/api/arrivals', async (req, res) => {
@@ -45,6 +75,7 @@ app.get('/api/arrivals', async (req, res) => {
     const list = (data.realtimeArrivalList || []).map((item) => ({
       subwayId: item.subwayId,
       subwayNm: item.subwayNm,
+      lineName: getLineName(item.subwayId, item.subwayNm),
       statnNm: item.statnNm,
       updnLine: item.updnLine,
       trainLineNm: item.trainLineNm,

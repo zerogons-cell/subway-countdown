@@ -1,5 +1,6 @@
 const screens = {
   search: document.getElementById('screen-search'),
+  lines: document.getElementById('screen-lines'),
   directions: document.getElementById('screen-directions'),
   countdown: document.getElementById('screen-countdown'),
 };
@@ -104,11 +105,45 @@ async function searchStation(station) {
       return;
     }
     searchError.textContent = '';
-    renderDirections(station, data.list);
+
+    const lines = new Map();
+    data.list.forEach((item) => {
+      if (!lines.has(item.subwayId)) {
+        lines.set(item.subwayId, { subwayId: item.subwayId, lineName: item.lineName });
+      }
+    });
+
+    if (lines.size > 1) {
+      renderLineSelection(station, data.list, [...lines.values()]);
+    } else {
+      renderDirections(station, data.list, 'search');
+    }
   } catch (err) {
     console.error(err);
     searchError.textContent = '네트워크 오류가 발생했습니다.';
   }
+}
+
+// ---------- 호선 선택 (환승역) ----------
+function renderLineSelection(station, list, lines) {
+  document.getElementById('lines-station-name').textContent = `${station}역`;
+  const listEl = document.getElementById('lines-list');
+  listEl.innerHTML = '';
+
+  lines
+    .sort((a, b) => String(a.subwayId).localeCompare(String(b.subwayId)))
+    .forEach((line) => {
+      const card = document.createElement('div');
+      card.className = 'direction-card';
+      card.innerHTML = `<div class="line-name">${line.lineName}</div>`;
+      card.addEventListener('click', () => {
+        const filtered = list.filter((item) => item.subwayId === line.subwayId);
+        renderDirections(station, filtered, 'lines');
+      });
+      listEl.appendChild(card);
+    });
+
+  showScreen('lines');
 }
 
 // ---------- 방향 선택 ----------
@@ -154,10 +189,17 @@ function formatEta(item) {
   return m > 0 ? `${m}분 ${s}초` : `${s}초`;
 }
 
-function renderDirections(station, list) {
+function renderDirections(station, list, backTarget) {
   document.getElementById('directions-station-name').textContent = `${station}역`;
   const listEl = document.getElementById('directions-list');
   listEl.innerHTML = '';
+
+  const backBtn = document.getElementById('directions-back-btn');
+  backBtn.textContent = backTarget === 'lines' ? '← 호선 선택' : '← 다시 검색';
+  backBtn.onclick = () => {
+    stopCountdownLoop();
+    showScreen(backTarget || 'search');
+  };
 
   const groups = groupByDirection(list);
   groups.forEach((items) => {
@@ -167,7 +209,7 @@ function renderDirections(station, list) {
     card.innerHTML = `
       <div>
         <div class="line-name">${soonest.trainLineNm}</div>
-        <div class="updn">${soonest.updnLine || ''} · ${soonest.subwayNm || ''}</div>
+        <div class="updn">${soonest.updnLine || ''} · ${soonest.lineName || ''}</div>
       </div>
       <div class="eta">${formatEta(soonest)}</div>
     `;
