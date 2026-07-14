@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<meta name="theme-color" content="#0b0f14" />
+<title>지하철 카운트다운</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div id="app">
+
+  <!-- 1. 검색 화면 -->
+  <section id="screen-search" class="screen active">
+    <h1>🚇 지하철 카운트다운</h1>
+
+    <div id="favorites"></div>
+
+    <form id="search-form" autocomplete="off">
+      <input id="station-input" type="text" placeholder="역 이름 (예: 강남)" inputmode="text" />
+      <button type="submit">검색</button>
+    </form>
+
+    <p id="search-error" class="error"></p>
+    <p id="search-hint" class="hint">역 이름을 입력하면 운행 방향을 보여드려요.</p>
+  </section>
+
+  <!-- 2. 방향 선택 화면 -->
+  <section id="screen-directions" class="screen">
+    <button class="back-btn" data-back="search">← 다시 검색</button>
+    <h2 id="directions-station-name"></h2>
+    <div id="directions-list"></div>
+  </section>
+
+  <!-- 3. 카운트다운 화면 -->
+  <section id="screen-countdown" class="screen">
+    <button class="back-btn" data-back="directions">← 방향 선택</button>
+    <div id="countdown-header">
+      <div id="countdown-station"></div>
+      <div id="countdown-direction"></div>
+      <button id="fav-toggle" title="즐겨찾기">☆</button>
+    </div>
+
+    <div id="countdown-display">
+      <div id="countdown-seconds">--</div>
+      <div id="countdown-status"></div>
+    </div>
+
+    <div id="next-train-info"></div>
+    <p id="countdown-error" class="error"></p>
+    <p class="hint small">15초마다 실제 도착정보로 보정됩니다</p>
+  </section>
+
+</div>
+<script src="app.js"></script>
+</body>
+</html>
