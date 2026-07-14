@@ -98,8 +98,8 @@ h2 {
 .hint.small { font-size: 12px; margin-top: 18px; }
 
 #favorites {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
   gap: 8px;
   margin-bottom: 18px;
 }
@@ -108,19 +108,29 @@ h2 {
   background: var(--card);
   border: 1px solid var(--border);
   color: var(--text);
-  padding: 10px 14px;
-  border-radius: 999px;
+  padding: 10px 12px;
+  border-radius: 14px;
   font-size: 14px;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 6px;
   cursor: pointer;
+  min-width: 0;
+}
+
+.fav-chip span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
 }
 
 .fav-chip .fav-remove {
   color: var(--muted);
   font-size: 13px;
   padding: 0 2px;
+  flex-shrink: 0;
 }
 
 #directions-list, #favorites-list {
