@@ -43,6 +43,7 @@ app.get('/api/arrivals', async (req, res) => {
     }
 
     const list = (data.realtimeArrivalList || []).map((item) => ({
+      subwayId: item.subwayId,
       subwayNm: item.subwayNm,
       statnNm: item.statnNm,
       updnLine: item.updnLine,

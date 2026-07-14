@@ -31,17 +31,28 @@ function saveFavorites(favs) {
   localStorage.setItem(FAV_KEY, JSON.stringify(favs));
 }
 
-function isFavorite(station, trainLineNm) {
-  return getFavorites().some((f) => f.station === station && f.trainLineNm === trainLineNm);
+// 물리적 방향(상행/하행/내선/외선)을 키로 추적한다. 종착역(trainLineNm)은
+// 열차마다 바뀔 수 있어(예: 중간에 회차하는 단축 운행) 즐겨찾기 키로 쓰면
+// 다음 열차로 넘어갈 때 매칭이 끊겨 더 이상 갱신되지 않는 문제가 있었다.
+function directionKey(subwayId, updnLine) {
+  return `${subwayId || ''}_${updnLine || ''}`;
 }
 
-function toggleFavorite(station, trainLineNm, updnLine) {
+function isFavorite(station, subwayId, updnLine) {
+  return getFavorites().some(
+    (f) => f.station === station && directionKey(f.subwayId, f.updnLine) === directionKey(subwayId, updnLine)
+  );
+}
+
+function toggleFavorite(station, subwayId, updnLine, label) {
   const favs = getFavorites();
-  const idx = favs.findIndex((f) => f.station === station && f.trainLineNm === trainLineNm);
+  const idx = favs.findIndex(
+    (f) => f.station === station && directionKey(f.subwayId, f.updnLine) === directionKey(subwayId, updnLine)
+  );
   if (idx >= 0) {
     favs.splice(idx, 1);
   } else {
-    favs.push({ station, trainLineNm, updnLine });
+    favs.push({ station, subwayId, updnLine, label });
   }
   saveFavorites(favs);
   renderFavorites();
@@ -54,13 +65,13 @@ function renderFavorites() {
   favs.forEach((f) => {
     const chip = document.createElement('div');
     chip.className = 'fav-chip';
-    chip.innerHTML = `<span>${f.station} · ${f.trainLineNm}</span><span class="fav-remove">✕</span>`;
+    chip.innerHTML = `<span>${f.station} · ${f.label || f.updnLine}</span><span class="fav-remove">✕</span>`;
     chip.querySelector('span:first-child').addEventListener('click', () => {
-      enterCountdown(f.station, f.trainLineNm, f.updnLine);
+      enterCountdown(f.station, f.subwayId, f.updnLine);
     });
     chip.querySelector('.fav-remove').addEventListener('click', (e) => {
       e.stopPropagation();
-      toggleFavorite(f.station, f.trainLineNm, f.updnLine);
+      toggleFavorite(f.station, f.subwayId, f.updnLine);
     });
     el.appendChild(chip);
   });
@@ -119,7 +130,7 @@ function stationsAwayCount(item) {
 function groupByDirection(list) {
   const groups = new Map();
   list.forEach((item) => {
-    const key = item.trainLineNm;
+    const key = directionKey(item.subwayId, item.updnLine || item.trainLineNm);
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key).push(item);
   });
@@ -149,19 +160,19 @@ function renderDirections(station, list) {
   listEl.innerHTML = '';
 
   const groups = groupByDirection(list);
-  groups.forEach((items, trainLineNm) => {
+  groups.forEach((items) => {
     const soonest = items[0];
     const card = document.createElement('div');
     card.className = 'direction-card';
     card.innerHTML = `
       <div>
-        <div class="line-name">${trainLineNm}</div>
+        <div class="line-name">${soonest.trainLineNm}</div>
         <div class="updn">${soonest.updnLine || ''} · ${soonest.subwayNm || ''}</div>
       </div>
       <div class="eta">${formatEta(soonest)}</div>
     `;
     card.addEventListener('click', () => {
-      enterCountdown(station, trainLineNm, soonest.updnLine);
+      enterCountdown(station, soonest.subwayId, soonest.updnLine, soonest.trainLineNm);
     });
     listEl.appendChild(card);
   });
@@ -182,10 +193,10 @@ function stopCountdownLoop() {
   countdownState = null;
 }
 
-async function enterCountdown(station, trainLineNm, updnLine) {
+async function enterCountdown(station, subwayId, updnLine, initialLabel) {
   stopCountdownLoop();
   document.getElementById('countdown-station').textContent = `${station}역`;
-  document.getElementById('countdown-direction').textContent = trainLineNm;
+  document.getElementById('countdown-direction').textContent = initialLabel || updnLine || '';
   document.getElementById('countdown-error').textContent = '';
   document.getElementById('countdown-seconds').textContent = '';
   document.getElementById('countdown-status').textContent = '불러오는 중...';
@@ -193,17 +204,17 @@ async function enterCountdown(station, trainLineNm, updnLine) {
 
   const favBtn = document.getElementById('fav-toggle');
   const updateFavBtn = () => {
-    favBtn.textContent = isFavorite(station, trainLineNm) ? '★' : '☆';
+    favBtn.textContent = isFavorite(station, subwayId, updnLine) ? '★' : '☆';
   };
   updateFavBtn();
   favBtn.onclick = () => {
-    toggleFavorite(station, trainLineNm, updnLine);
+    toggleFavorite(station, subwayId, updnLine, countdownState && countdownState.trainLineNm);
     updateFavBtn();
   };
 
   showScreen('countdown');
 
-  countdownState = { station, trainLineNm };
+  countdownState = { station, subwayId, updnLine };
   await refreshCountdown();
   pollInterval = setInterval(refreshCountdown, 15000);
   tickInterval = setInterval(tickCountdown, 1000);
@@ -211,7 +222,7 @@ async function enterCountdown(station, trainLineNm, updnLine) {
 
 async function refreshCountdown() {
   if (!countdownState) return;
-  const { station, trainLineNm } = countdownState;
+  const { station, subwayId, updnLine } = countdownState;
   try {
     const res = await fetch(`/api/arrivals?station=${encodeURIComponent(station)}`);
     const data = await res.json();
@@ -220,20 +231,22 @@ async function refreshCountdown() {
       return;
     }
     const groups = groupByDirection(data.list);
-    const items = groups.get(trainLineNm);
+    const items = groups.get(directionKey(subwayId, updnLine));
     if (!items || items.length === 0) {
-      document.getElementById('countdown-error').textContent = '해당 방향의 도착 정보가 사라졌습니다. (열차 통과 직후일 수 있어요)';
+      document.getElementById('countdown-error').textContent = '해당 방향의 도착 정보가 사라졌습니다. (운행 종료 시간대일 수 있어요)';
       return;
     }
     document.getElementById('countdown-error').textContent = '';
     const soonest = items[0];
     const next = items[1];
 
+    countdownState.trainLineNm = soonest.trainLineNm;
     countdownState.tickable = isReliableEta(soonest);
     countdownState.remaining = soonest.barvlDt;
     countdownState.fetchedAt = Date.now();
     countdownState.arvlMsg2 = soonest.arvlMsg2;
 
+    document.getElementById('countdown-direction').textContent = soonest.trainLineNm;
     document.getElementById('next-train-info').textContent = next
       ? `그 다음 열차: ${formatEta(next)} 후`
       : '';
