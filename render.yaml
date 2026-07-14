@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: subway-countdown
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: SEOUL_API_KEY
+        sync: false
