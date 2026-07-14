@@ -40,6 +40,20 @@ function getLineName(subwayId, subwayNm) {
   return subwayId ? `노선(${subwayId})` : '노선 미상';
 }
 
+// barvlDt(남은 초)는 "지금부터"가 아니라 recptnDt(서울시 시스템이 열차 위치를
+// 계산한 시각) 기준이다. recptnDt는 타임존 표기가 없는 한국 표준시(KST, UTC+9)
+// 문자열이라 항상 KST로 고정 해석해야 배포 서버의 타임존(대부분 UTC)과 무관하게
+// 정확한 값이 나온다. 이 값을 빼주지 않으면 데이터가 실제로 몇 초~몇십 초(때로는
+// 그 이상) 지난 뒤에 표시되는 만큼 카운트다운이 항상 실제보다 느리게(더 많이
+// 남은 것처럼) 표시된다.
+function parseKstEpoch(recptnDt) {
+  if (!recptnDt) return null;
+  const m = /^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})$/.exec(recptnDt);
+  if (!m) return null;
+  const [, y, mo, d, h, mi, s] = m.map(Number);
+  return Date.UTC(y, mo - 1, d, h - 9, mi, s);
+}
+
 // 서울 열린데이터광장 실시간 지하철 도착정보 프록시
 // 브라우저에서 직접 호출 시 CORS가 막혀 있어 서버를 거쳐 전달한다.
 app.get('/api/arrivals', async (req, res) => {
@@ -82,8 +96,9 @@ app.get('/api/arrivals', async (req, res) => {
       arvlMsg2: item.arvlMsg2,
       arvlMsg3: item.arvlMsg3,
       arvlCd: item.arvlCd,
-      barvlDt: Number(item.barvlDt), // 도착까지 남은 초
-      recptnDt: item.recptnDt // 서버가 이 데이터를 수신한 시각
+      barvlDt: Number(item.barvlDt), // recptnDt 시점 기준 도착까지 남은 초
+      recptnDt: item.recptnDt, // 서울시 시스템이 열차 위치를 계산한 시각(KST)
+      recptnEpoch: parseKstEpoch(item.recptnDt) // 위 시각의 ms epoch (클라이언트 보정용)
     }));
 
     res.json({ list, serverTime: Date.now() });

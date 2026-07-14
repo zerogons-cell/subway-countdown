@@ -162,6 +162,16 @@ function stationsAwayCount(item) {
   return m ? Number(m[1]) : 999;
 }
 
+// barvlDt는 "지금"이 아니라 recptnEpoch(서울시 시스템이 계산한 시각) 기준
+// 남은 초다. 네트워크 지연, 무료 호스팅 콜드 스타트 등으로 그 사이 시간이
+// 흐른 만큼 빼주지 않으면 카운트다운이 실제보다 항상 느리게(더 많이 남은
+// 것처럼) 표시된다.
+function correctedBarvlDt(item) {
+  if (item.barvlDt <= 0 || !item.recptnEpoch) return item.barvlDt;
+  const dataAgeSec = Math.max(0, Math.round((Date.now() - item.recptnEpoch) / 1000));
+  return Math.max(item.barvlDt - dataAgeSec, 0);
+}
+
 function groupByDirection(list) {
   const groups = new Map();
   list.forEach((item) => {
@@ -183,9 +193,10 @@ function groupByDirection(list) {
 
 function formatEta(item) {
   if (!isReliableEta(item)) return item.arvlMsg2 || '정보 없음';
-  if (item.barvlDt <= 0) return item.arvlMsg2 || '곧 도착';
-  const m = Math.floor(item.barvlDt / 60);
-  const s = item.barvlDt % 60;
+  const remaining = correctedBarvlDt(item);
+  if (remaining <= 0) return item.arvlMsg2 || '곧 도착';
+  const m = Math.floor(remaining / 60);
+  const s = remaining % 60;
   return m > 0 ? `${m}분 ${s}초` : `${s}초`;
 }
 
@@ -284,7 +295,7 @@ async function refreshCountdown() {
 
     countdownState.trainLineNm = soonest.trainLineNm;
     countdownState.tickable = isReliableEta(soonest);
-    countdownState.remaining = soonest.barvlDt;
+    countdownState.remaining = correctedBarvlDt(soonest);
     countdownState.fetchedAt = Date.now();
     countdownState.arvlMsg2 = soonest.arvlMsg2;
 
