@@ -275,7 +275,7 @@ async function enterCountdown(station, subwayId, updnLine, initialLabel) {
 
   countdownState = { station, subwayId, updnLine };
   await refreshCountdown();
-  pollInterval = setInterval(refreshCountdown, 15000);
+  pollInterval = setInterval(refreshCountdown, 5000);
   tickInterval = setInterval(tickCountdown, 1000);
 }
 
