@@ -3,6 +3,7 @@ const screens = {
   lines: document.getElementById('screen-lines'),
   directions: document.getElementById('screen-directions'),
   countdown: document.getElementById('screen-countdown'),
+  data: document.getElementById('screen-data'),
 };
 
 function showScreen(name) {
@@ -297,6 +298,119 @@ function recommendDeparture(station, subwayId, updnLine) {
     sampleCount: bestTimes.length
   };
 }
+
+// ---------- 데이터 관리 ----------
+function formatLogDate(isoString) {
+  const d = new Date(isoString);
+  const weekday = ['일', '월', '화', '수', '목', '금', '토'][d.getDay()];
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mi = String(d.getMinutes()).padStart(2, '0');
+  return `${mm}/${dd}(${weekday}) ${hh}:${mi}`;
+}
+
+function renderWalkLogList() {
+  const listEl = document.getElementById('walk-log-list');
+  const log = getWalkLog();
+  listEl.innerHTML = '';
+
+  if (!log.length) {
+    listEl.innerHTML = '<div class="data-empty">기록된 도보 시간이 없어요.</div>';
+    return;
+  }
+
+  const rowsEl = document.createElement('div');
+  rowsEl.className = 'data-row-list';
+
+  log
+    .map((entry, idx) => ({ entry, idx }))
+    .reverse()
+    .forEach(({ entry, idx }) => {
+      const m = Math.floor(entry.durationSec / 60);
+      const s = entry.durationSec % 60;
+      const row = document.createElement('div');
+      row.className = 'data-row';
+      row.innerHTML = `
+        <div class="data-row-main"><span class="data-row-date">${formatLogDate(entry.recordedAt)}</span>${entry.station}역 · ${m}분 ${s}초</div>
+        <span class="fav-remove">✕</span>
+      `;
+      row.querySelector('.fav-remove').addEventListener('click', () => {
+        const current = getWalkLog();
+        current.splice(idx, 1);
+        saveWalkLog(current);
+        renderWalkLogList();
+        renderWalkLastInfo();
+        renderFavorites();
+      });
+      rowsEl.appendChild(row);
+    });
+
+  listEl.appendChild(rowsEl);
+}
+
+function renderArrivalLogList() {
+  const listEl = document.getElementById('arrival-log-list');
+  const log = getArrivalLog();
+  listEl.innerHTML = '';
+
+  if (!log.length) {
+    listEl.innerHTML = '<div class="data-empty">기록된 도착 시각이 없어요.</div>';
+    return;
+  }
+
+  const rowsEl = document.createElement('div');
+  rowsEl.className = 'data-row-list';
+
+  log
+    .map((entry, idx) => ({ entry, idx }))
+    .reverse()
+    .forEach(({ entry, idx }) => {
+      const row = document.createElement('div');
+      row.className = 'data-row';
+      row.innerHTML = `
+        <div class="data-row-main"><span class="data-row-date">${formatLogDate(entry.recordedAt)}</span>${entry.station}역 · ${entry.trainLineNm}</div>
+        <span class="fav-remove">✕</span>
+      `;
+      row.querySelector('.fav-remove').addEventListener('click', () => {
+        const current = getArrivalLog();
+        current.splice(idx, 1);
+        saveArrivalLog(current);
+        renderArrivalLogList();
+        renderFavorites();
+      });
+      rowsEl.appendChild(row);
+    });
+
+  listEl.appendChild(rowsEl);
+}
+
+function renderDataScreen() {
+  renderWalkLogList();
+  renderArrivalLogList();
+}
+
+document.getElementById('data-manage-btn').addEventListener('click', () => {
+  renderDataScreen();
+  showScreen('data');
+});
+
+document.getElementById('clear-walks-btn').addEventListener('click', () => {
+  if (!getWalkLog().length) return;
+  if (!confirm('도보 시간 기록을 모두 삭제할까요?')) return;
+  saveWalkLog([]);
+  renderWalkLogList();
+  renderWalkLastInfo();
+  renderFavorites();
+});
+
+document.getElementById('clear-arrivals-btn').addEventListener('click', () => {
+  if (!getArrivalLog().length) return;
+  if (!confirm('도착 시각 기록을 모두 삭제할까요?')) return;
+  saveArrivalLog([]);
+  renderArrivalLogList();
+  renderFavorites();
+});
 
 // ---------- 검색 ----------
 const searchForm = document.getElementById('search-form');

@@ -12,7 +12,10 @@
 
   <!-- 1. 검색 화면 -->
   <section id="screen-search" class="screen active">
-    <h1>🚇 지하철 카운트다운</h1>
+    <div id="home-header">
+      <h1>🚇 지하철 카운트다운</h1>
+      <button id="data-manage-btn" class="link-btn">⚙️ 데이터 관리</button>
+    </div>
 
     <div id="walk-widget">
       <div id="walk-idle" class="walk-state active">
@@ -77,6 +80,29 @@
     <div id="next-train-info"></div>
     <p id="countdown-error" class="error"></p>
     <p class="hint small">5초마다 실제 도착정보로 보정됩니다</p>
+  </section>
+
+  <!-- 5. 데이터 관리 화면 -->
+  <section id="screen-data" class="screen">
+    <button class="back-btn" data-back="search">← 홈으로</button>
+    <h2>데이터 관리</h2>
+    <p class="hint">모든 기록은 이 휴대폰 브라우저에만 저장돼요. 잘못 쌓인 기록은 여기서 지울 수 있어요.</p>
+
+    <div class="data-section">
+      <div class="data-section-header">
+        <h3>🚶 도보 시간 기록</h3>
+        <button id="clear-walks-btn" class="link-btn">전체 삭제</button>
+      </div>
+      <div id="walk-log-list"></div>
+    </div>
+
+    <div class="data-section">
+      <div class="data-section-header">
+        <h3>🚇 도착 시각 기록</h3>
+        <button id="clear-arrivals-btn" class="link-btn">전체 삭제</button>
+      </div>
+      <div id="arrival-log-list"></div>
+    </div>
   </section>
 
 </div>

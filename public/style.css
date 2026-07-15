@@ -34,14 +34,36 @@ html, body {
 
 h1 {
   font-size: 22px;
-  margin: 8px 0 20px;
-  text-align: center;
+  margin: 0;
 }
 
 h2 {
   font-size: 18px;
   margin: 4px 0 16px;
   color: var(--muted);
+}
+
+h3 {
+  font-size: 14px;
+  margin: 0;
+  color: var(--text);
+}
+
+#home-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 8px 0 20px;
+}
+
+.link-btn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 13px;
+  padding: 6px 0;
+  cursor: pointer;
 }
 
 .back-btn {
@@ -332,6 +354,60 @@ h2 {
   font-size: 14px;
   color: var(--muted);
   text-align: center;
+}
+
+.data-section {
+  margin-top: 24px;
+}
+
+.data-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.data-row-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.data-row {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 13px;
+}
+
+.data-row-main {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.data-row-date {
+  color: var(--muted);
+  margin-right: 6px;
+}
+
+.data-row .fav-remove {
+  color: var(--muted);
+  font-size: 13px;
+  padding: 0 2px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.data-empty {
+  color: var(--muted);
+  font-size: 13px;
+  padding: 10px 2px;
 }
 
 @media (prefers-color-scheme: light) {
