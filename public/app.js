@@ -66,10 +66,20 @@ function renderFavorites() {
   favs.forEach((f) => {
     const chip = document.createElement('div');
     chip.className = 'fav-chip';
+
+    const rec = recommendDeparture(f.station, f.subwayId, f.updnLine);
+    let recHtml = '';
+    if (rec && !rec.insufficient) {
+      recHtml = `<div class="fav-chip-recommend">${rec.leaveTime} 출발 → ${rec.arrivalTime} 도착</div>`;
+    } else if (rec && rec.insufficient) {
+      recHtml = `<div class="fav-chip-recommend muted">기록 ${rec.count}건 · 예측 준비 중</div>`;
+    }
+
     chip.innerHTML = `
       <div class="fav-chip-info">
         <div class="fav-chip-station">${f.station}역</div>
         <div class="fav-chip-direction">${f.label || f.updnLine}</div>
+        ${recHtml}
       </div>
       <span class="fav-remove">✕</span>
     `;
@@ -82,6 +92,210 @@ function renderFavorites() {
     });
     el.appendChild(chip);
   });
+}
+
+// ---------- 도보 시간 측정 ----------
+const WALK_KEY = 'subway-countdown-walks';
+const WALK_TIMER_KEY = 'subway-countdown-walk-timer';
+
+function getWalkLog() {
+  try {
+    return JSON.parse(localStorage.getItem(WALK_KEY)) || [];
+  } catch {
+    return [];
+  }
+}
+
+function saveWalkLog(log) {
+  const trimmed = log.length > 200 ? log.slice(log.length - 200) : log;
+  localStorage.setItem(WALK_KEY, JSON.stringify(trimmed));
+}
+
+function getWalkTimerState() {
+  try {
+    return JSON.parse(localStorage.getItem(WALK_TIMER_KEY));
+  } catch {
+    return null;
+  }
+}
+
+function setWalkTimerState(state) {
+  if (state) localStorage.setItem(WALK_TIMER_KEY, JSON.stringify(state));
+  else localStorage.removeItem(WALK_TIMER_KEY);
+}
+
+function avgWalkSeconds(station) {
+  const walks = getWalkLog().filter((w) => w.station === station);
+  if (!walks.length) return null;
+  const sum = walks.reduce((a, w) => a + w.durationSec, 0);
+  return Math.round(sum / walks.length);
+}
+
+let walkTickInterval = null;
+
+function showWalkState(name) {
+  document.querySelectorAll('.walk-state').forEach((el) => el.classList.remove('active'));
+  document.getElementById(`walk-${name}`).classList.add('active');
+}
+
+function updateWalkElapsedDisplay() {
+  const state = getWalkTimerState();
+  if (!state) return;
+  const elapsed = Math.floor((Date.now() - state.startedAt) / 1000);
+  const m = Math.floor(elapsed / 60);
+  const s = elapsed % 60;
+  document.getElementById('walk-elapsed').textContent = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
+
+function renderWalkLastInfo() {
+  const walks = getWalkLog();
+  const el = document.getElementById('walk-last-info');
+  if (!walks.length) {
+    el.textContent = '기록된 도보 시간이 아직 없어요.';
+    return;
+  }
+  const last = walks[walks.length - 1];
+  const m = Math.floor(last.durationSec / 60);
+  const s = last.durationSec % 60;
+  el.textContent = `최근 기록: ${last.station}역까지 ${m}분 ${s}초`;
+}
+
+function startWalkTimer() {
+  setWalkTimerState({ startedAt: Date.now() });
+  showWalkState('running');
+  updateWalkElapsedDisplay();
+  if (walkTickInterval) clearInterval(walkTickInterval);
+  walkTickInterval = setInterval(updateWalkElapsedDisplay, 1000);
+}
+
+function stopWalkTimer() {
+  if (walkTickInterval) clearInterval(walkTickInterval);
+  walkTickInterval = null;
+  const favs = getFavorites();
+  document.getElementById('walk-station-input').value = favs[0] ? favs[0].station : '';
+  showWalkState('save');
+}
+
+function cancelWalkSave() {
+  setWalkTimerState(null);
+  showWalkState('idle');
+  renderWalkLastInfo();
+}
+
+function saveWalk() {
+  const state = getWalkTimerState();
+  const station = document.getElementById('walk-station-input').value.trim();
+  if (!state || !station) return;
+  const durationSec = Math.max(0, Math.round((Date.now() - state.startedAt) / 1000));
+  const log = getWalkLog();
+  log.push({ station, durationSec, recordedAt: new Date().toISOString() });
+  saveWalkLog(log);
+  setWalkTimerState(null);
+  showWalkState('idle');
+  renderWalkLastInfo();
+  renderFavorites();
+}
+
+document.getElementById('walk-start-btn').addEventListener('click', startWalkTimer);
+document.getElementById('walk-stop-btn').addEventListener('click', stopWalkTimer);
+document.getElementById('walk-save-btn').addEventListener('click', saveWalk);
+document.getElementById('walk-cancel-btn').addEventListener('click', cancelWalkSave);
+
+function initWalkWidget() {
+  renderWalkLastInfo();
+  const state = getWalkTimerState();
+  if (state) {
+    showWalkState('running');
+    updateWalkElapsedDisplay();
+    walkTickInterval = setInterval(updateWalkElapsedDisplay, 1000);
+  } else {
+    showWalkState('idle');
+  }
+}
+
+// ---------- 도착 기록 & 출발 시간 추천 ----------
+const ARRIVAL_LOG_KEY = 'subway-countdown-arrivals';
+
+function getArrivalLog() {
+  try {
+    return JSON.parse(localStorage.getItem(ARRIVAL_LOG_KEY)) || [];
+  } catch {
+    return [];
+  }
+}
+
+function saveArrivalLog(log) {
+  const trimmed = log.length > 300 ? log.slice(log.length - 300) : log;
+  localStorage.setItem(ARRIVAL_LOG_KEY, JSON.stringify(trimmed));
+}
+
+function getDayType(date) {
+  const day = date.getDay();
+  return day === 0 || day === 6 ? 'weekend' : 'weekday';
+}
+
+function minutesSinceMidnight(date) {
+  return date.getHours() * 60 + date.getMinutes() + date.getSeconds() / 60;
+}
+
+function formatClock(min) {
+  const total = Math.max(0, Math.round(min));
+  const h = Math.floor(total / 60) % 24;
+  const m = total % 60;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+}
+
+// 열차마다 고유한 btrainNo로 중복 기록을 막는다. 5초 폴링 동안 같은 열차가
+// "도착" 상태로 여러 번 잡힐 수 있어, 이게 없으면 같은 도착이 여러 건으로 쌓인다.
+function logArrival(station, item) {
+  if (!item.btrainNo) return;
+  const recordedDate = item.recptnEpoch ? new Date(item.recptnEpoch) : new Date();
+  const log = getArrivalLog();
+  log.push({
+    station,
+    subwayId: item.subwayId,
+    updnLine: item.updnLine,
+    trainLineNm: item.trainLineNm,
+    dayType: getDayType(recordedDate),
+    timeOfDayMin: minutesSinceMidnight(recordedDate),
+    recordedAt: recordedDate.toISOString()
+  });
+  saveArrivalLog(log);
+}
+
+// 같은 방향으로 쌓인 도착 기록을 5분 단위로 묶어, 가장 자주 등장한(=평소 타는)
+// 시간대를 "다음 열차"로 추정한다. 도보 평균 시간을 빼서 출발 시각을 역산한다.
+function recommendDeparture(station, subwayId, updnLine) {
+  const walkSec = avgWalkSeconds(station);
+  if (walkSec == null) return null;
+
+  const dayType = getDayType(new Date());
+  const entries = getArrivalLog().filter(
+    (e) => e.station === station && e.subwayId === subwayId && e.updnLine === updnLine && e.dayType === dayType
+  );
+  if (entries.length < 3) return { insufficient: true, count: entries.length };
+
+  const buckets = new Map();
+  entries.forEach((e) => {
+    const bucket = Math.floor(e.timeOfDayMin / 5) * 5;
+    if (!buckets.has(bucket)) buckets.set(bucket, []);
+    buckets.get(bucket).push(e.timeOfDayMin);
+  });
+
+  let bestTimes = [];
+  buckets.forEach((times) => {
+    if (times.length > bestTimes.length) bestTimes = times;
+  });
+  if (bestTimes.length < 2) return { insufficient: true, count: entries.length };
+
+  const avgArrivalMin = bestTimes.reduce((a, b) => a + b, 0) / bestTimes.length;
+  const leaveMin = avgArrivalMin - walkSec / 60 - 0.5; // 30초 여유
+
+  return {
+    arrivalTime: formatClock(avgArrivalMin),
+    leaveTime: formatClock(leaveMin),
+    sampleCount: bestTimes.length
+  };
 }
 
 // ---------- 검색 ----------
@@ -305,6 +519,11 @@ async function refreshCountdown() {
     countdownState.fetchedAt = Date.now();
     countdownState.arvlMsg2 = soonest.arvlMsg2;
 
+    if (soonest.arvlCd === '1' && soonest.btrainNo && countdownState.lastLoggedBtrainNo !== soonest.btrainNo) {
+      logArrival(station, soonest);
+      countdownState.lastLoggedBtrainNo = soonest.btrainNo;
+    }
+
     document.getElementById('countdown-direction').textContent = soonest.trainLineNm;
     document.getElementById('next-train-info').textContent = next
       ? `그 다음 열차: ${formatEta(next)} 후`
@@ -353,4 +572,5 @@ function tickCountdown() {
 }
 
 // ---------- 초기화 ----------
+initWalkWidget();
 renderFavorites();

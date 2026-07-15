@@ -14,6 +14,24 @@
   <section id="screen-search" class="screen active">
     <h1>🚇 지하철 카운트다운</h1>
 
+    <div id="walk-widget">
+      <div id="walk-idle" class="walk-state active">
+        <button id="walk-start-btn" class="widget-btn">🚶 집에서 출발</button>
+        <div id="walk-last-info" class="hint small"></div>
+      </div>
+      <div id="walk-running" class="walk-state">
+        <div id="walk-elapsed">00:00</div>
+        <button id="walk-stop-btn" class="widget-btn">🏁 역 도착</button>
+      </div>
+      <div id="walk-save" class="walk-state">
+        <input id="walk-station-input" type="text" placeholder="어느 역이었나요? (예: 강남)" />
+        <div class="walk-save-actions">
+          <button id="walk-save-btn" class="widget-btn">저장</button>
+          <button id="walk-cancel-btn" class="widget-btn-secondary">취소</button>
+        </div>
+      </div>
+    </div>
+
     <div id="favorites"></div>
 
     <form id="search-form" autocomplete="off">

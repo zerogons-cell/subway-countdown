@@ -97,6 +97,69 @@ h2 {
 
 .hint.small { font-size: 12px; margin-top: 18px; }
 
+#walk-widget {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-bottom: 18px;
+}
+
+.walk-state { display: none; }
+.walk-state.active { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+#walk-idle .hint.small { margin-top: 0; text-align: left; }
+
+.widget-btn {
+  font-size: 15px;
+  font-weight: 600;
+  padding: 10px 16px;
+  border-radius: 10px;
+  border: none;
+  background: var(--accent);
+  color: #08131f;
+  cursor: pointer;
+}
+
+.widget-btn-secondary {
+  font-size: 14px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+#walk-elapsed {
+  font-size: 20px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--green);
+  flex: 1;
+}
+
+#walk-save {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+#walk-station-input {
+  font-size: 15px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+}
+
+.walk-save-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.walk-save-actions .widget-btn { flex: 1; }
+
 #favorites {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -140,6 +203,21 @@ h2 {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.fav-chip-recommend {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--green);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-top: 1px;
+}
+
+.fav-chip-recommend.muted {
+  color: var(--muted);
+  font-weight: 500;
 }
 
 .fav-chip .fav-remove {

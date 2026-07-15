@@ -96,6 +96,7 @@ app.get('/api/arrivals', async (req, res) => {
       arvlMsg2: item.arvlMsg2,
       arvlMsg3: item.arvlMsg3,
       arvlCd: item.arvlCd,
+      btrainNo: item.btrainNo, // 실제 열차를 구분하는 고유 열차번호 (도착 기록 중복 방지용)
       barvlDt: Number(item.barvlDt), // recptnDt 시점 기준 도착까지 남은 초
       recptnDt: item.recptnDt, // 서울시 시스템이 열차 위치를 계산한 시각(KST)
       recptnEpoch: parseKstEpoch(item.recptnDt) // 위 시각의 ms epoch (클라이언트 보정용)
